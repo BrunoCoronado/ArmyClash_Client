@@ -5,12 +5,10 @@
  */
 package main;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
-import rabbit.Consumir;
-import rabbit.c;
+import java.util.Scanner;
+import rabbit.Emisor;
+import rabbit.Receptor;
+
 /**
  *
  * @author bruno
@@ -22,7 +20,14 @@ public class Main {
      */
     
     public static void main(String[] args) {
-        c c =  new c();
-        c.iniciar();
+        Receptor receptor = new Receptor();
+        receptor.start();
+        
+        Emisor emisor = new Emisor();
+        Scanner scanner = new Scanner(System.in);
+        for(int i=0;i<30;i++){
+            System.out.println("peticion");
+            emisor.enviarPeticion(scanner.nextLine());
+        }
     }
 }
