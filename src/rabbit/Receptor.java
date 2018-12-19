@@ -27,11 +27,35 @@ public class Receptor extends Thread{
             DeliverCallback deliverCallback = (consumerTag, delivery) ->{
                 //aca se captura la respuesta
                 String msg = new String(delivery.getBody(), "UTF-8");  
-                System.out.println("recibido: " + msg);
+                manejarRespuesta(msg);
             };
             canal.basicConsume("", true, deliverCallback, consumerTag -> {});
         }catch(Exception ex){
             ex.printStackTrace();
+        }
+    }
+    
+    private void manejarRespuesta(String respuesta){
+        try{
+            if(respuesta != null){
+                if(respuesta.contains("<0")){//estamos trabajando una entrada de informacion
+                    String[] cuerpoMensaje = respuesta.split("<");
+                    if(cuerpoMensaje[0].contains(">")){
+                        String[] partesCuerpoMensaje = cuerpoMensaje[0].split(">");                    
+                        switch(partesCuerpoMensaje[1]){
+                            case "m":
+                                String[] datosMapa = partesCuerpoMensaje[0].split("#");
+                                main.Main.ventanaCliente.cargarTablero(datosMapa[2], Integer.parseInt(datosMapa[0]), Integer.parseInt(datosMapa[1]));
+                                break;
+                            default:
+                                System.out.println("Destinatario: "+partesCuerpoMensaje[1]+" Mensaje: "+partesCuerpoMensaje[0]);
+                        }
+                    }
+                }
+            }
+        }catch(Exception ex){
+            ex.printStackTrace();
+            System.out.println("error al recibir mensaje\n"+respuesta);
         }
     }
 }
