@@ -117,48 +117,26 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
             String[] tropasJugador2 = valoresContenido[1].split("\n");
             contadorTropasJ2 = tropasJugador2.length;
             contadorMovimientosDisponiblesJ2 = contadorTropasJ2;
-            Tropa[][] tableroLogico = new Tropa[maxFilas][maxColumnas];
                 
             for (int i = 0; i < tropasJugador1.length; i++) {
                 String[] valoresTropa = tropasJugador1[i].split(",");//0-Id/1-Tipo/2-X/3-Y
                 int fila = Integer.parseInt(valoresTropa[3]);
                 int columna = Integer.parseInt(valoresTropa[2]);
-                try{tableroLogico[fila-1][columna-1] = new Tropa(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
+                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila, 1);
+                tropaJL.addMouseListener(this);
+                try{tablero[fila-1][columna-1].setTropa(tropaJL);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
             }
-            añadirTropasAlTablero(tableroLogico, 1);
-            tableroLogico = new Tropa[maxFilas][maxColumnas];
             for (int i = 0; i < tropasJugador2.length; i++) {
                 String[] valoresTropa = tropasJugador2[i].split(",");//0-Id/1-Tipo/2-X/3-Y
                 int fila = Integer.parseInt(valoresTropa[3]);
                 int columna = Integer.parseInt(valoresTropa[2]);
-                try{tableroLogico[fila-1][columna-1] = new Tropa(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
+                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila,2);
+                tropaJL.addMouseListener(this);
+                try{tablero[fila-1][columna-1].setTropa(tropaJL);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
             }
-            añadirTropasAlTablero(tableroLogico, 2);
             pack();
         }catch(Exception ex){
             txtLog.append("---->!!!Error al cargar tropas!!!\n");
-        }
-    }
-    
-    private void añadirTropasAlTablero(Tropa[][] tropas, int jugador){
-        try{    
-            for (int i = 0; i < maxFilas; i++) {
-                for (int j = 0; j < maxColumnas; j++) {
-                    TropaJL tropaJL;
-                    if(tropas[i][j] != null){
-                        tropaJL = new TropaJL(tropas[i][j].getId(), tropas[i][j].getNombre(), tropas[i][j].getPosicionX(), tropas[i][j].getPosicionY(), jugador);  
-                        tropaJL.setText(tropas[i][j].getNombre());
-                    }else
-                        tropaJL = new TropaJL();  
-                    tropaJL.addMouseListener(this);
-                    try{
-                        tablero[i][j].setTropa(tropaJL);
-                        tablero[i][j].add(tropaJL);
-                    }catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
-                }
-            }
-        }catch(Exception ex){
-            txtLog.append("---->!!!Error al cargar ¨Paneles!!!\n");
         }
     }
     
@@ -227,7 +205,54 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         main.Main.emisor.enviarPeticion(id+","+posicionX+","+posicionY+","+vida+">ac"+jugador+"<0");
         txtLog.setText(txtLog.getText() + "--> Enviando informacion al servidor...\n");
     }
-
+    
+    private boolean validarMovimiento(TropaJL tropa, Casilla casilla){
+        //validar que este disponible
+        if(casilla.getTropa().getNombre() != null){
+            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Casilla Ocupada!!!\n");                      
+            return false;
+        }
+        //validar el terreno
+        int nivelDesplazamiento = tropa.getNivelDesplazamiento();
+        if(nivelDesplazamiento != 0){
+            switch(nivelDesplazamiento){
+                case 1:
+                    if(casilla.getTipoCasilla().equals("agua")){
+                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
+                        return false;
+                    }
+                    break;
+                case 2:
+                    if(casilla.getTipoCasilla().equals("montania") || casilla.getTipoCasilla().equals("agua")){
+                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
+                        return false;
+                    }
+                    break;
+                case 3:
+                    if(!casilla.getTipoCasilla().equals("grama")){
+                        if(!casilla.getTipoCasilla().equals("carretera")){
+                            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
+                            return false;
+                        }
+                    }
+                    break;
+                case 4:
+                    if(!casilla.getTipoCasilla().equals("carretera")){
+                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
+                        return false;
+                    }
+                    break;
+            }
+        }
+        //validar limite movimiento
+        int casillasMovidas = Math.abs(tropa.getPosicionX()-casilla.getPosX())+Math.abs(tropa.getPosicionY()-casilla.getPosY());
+        if(casillasMovidas > tropa.getAlcanceMovimiento()){
+            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Fuera de Alcance!!!\n");
+            return false;
+        }
+        return true;
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -322,20 +347,20 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         if(me.getComponent() instanceof Casilla){
             if(tropaMovimientoActual != null){
                 Casilla casilla = (Casilla)me.getComponent();
-                main.Main.ventanaCliente.txtLog.append("--> Moviendo a Columa "+casilla.getPosX()+" Fila "+casilla.getPosY()+" del tipo "+casilla.getTipoCasilla()+"\n");   
-                enviarCambiosTropa(tropaMovimientoActual.getId(), casilla.getPosX(), casilla.getPosY(), tropaMovimientoActual.getVida(), jugadorActual);
-                TropaJL tropaJL = new TropaJL();  
-                tropaJL.addMouseListener(this);
-                tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].setTropa(tropaJL);
-                tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].remove(tropaMovimientoActual);
-                tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].add(tropaJL);
-                tropaMovimientoActual.setPosicionX(casilla.getPosX());
-                tropaMovimientoActual.setPosicionY(casilla.getPosY());
-                tablero[casilla.getPosY()-1][casilla.getPosX()-1].setTropa(tropaMovimientoActual);
-                tablero[casilla.getPosY()-1][casilla.getPosX()-1].add(tropaMovimientoActual);
-                flujoDeTurnos(jugadorActual);
-                tropaMovimientoActual = null;
-                repaint();
+                if(validarMovimiento(tropaMovimientoActual, casilla)){
+                    main.Main.ventanaCliente.txtLog.append("--> Moviendo a Columa "+casilla.getPosX()+" Fila "+casilla.getPosY()+" del tipo "+casilla.getTipoCasilla()+"\n");   
+                    enviarCambiosTropa(tropaMovimientoActual.getId(), casilla.getPosX(), casilla.getPosY(), tropaMovimientoActual.getVida(), jugadorActual);
+                    TropaJL tropaJL = new TropaJL();  
+                    tropaJL.addMouseListener(this);
+                    tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].removeTropa();
+                    tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].setTropa(tropaJL);
+                    tropaMovimientoActual.setPosicionX(casilla.getPosX());
+                    tropaMovimientoActual.setPosicionY(casilla.getPosY());
+                    tablero[casilla.getPosY()-1][casilla.getPosX()-1].setTropa(tropaMovimientoActual);
+                    flujoDeTurnos(jugadorActual);
+                    tropaMovimientoActual = null;
+                    repaint();
+                }
             }
         }else{
             if(tropaMovimientoActual == null){

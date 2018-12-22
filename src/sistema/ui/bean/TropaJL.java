@@ -141,7 +141,7 @@ public class TropaJL extends JLabel{
         this.nombre = tipo;
         switch(nombre){
             case "infanteria":
-                alcanceMovimiento = 2;
+                alcanceMovimiento = 3;
                 vida = 50;
                 ataque = 30;
                 alcanceAtaque = 1;

@@ -22,6 +22,12 @@ public class Casilla extends JPanel {
 
     public void setTropa(TropaJL tropa) {
         this.tropa = tropa;
+        add(tropa);
+    }
+    
+    public void removeTropa(){
+        remove(tropa);
+        tropa=null;
     }
     
     public String getTipoCasilla() {
