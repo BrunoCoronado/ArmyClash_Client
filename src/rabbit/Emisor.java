@@ -27,18 +27,4 @@ public class Emisor {
             ex.printStackTrace();
         }
     }
-    
-    public void enviarInformacion(String peticion){
-        peticion += "<0";
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
-        try {
-            Connection connection = factory.newConnection();
-            Channel channel = connection.createChannel();
-            channel.queueDeclare("ArmyClash-Peticiones", false, false, false, null);
-            channel.basicPublish("", "ArmyClash-Peticiones", null, peticion.getBytes());
-        }catch(Exception ex){
-            ex.printStackTrace();
-        }
-    }
 }

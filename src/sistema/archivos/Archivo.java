@@ -22,12 +22,10 @@ public class Archivo {
                 contenido += linea+"\n";
                 linea = reader.readLine();
             }
-            System.out.println(contenido);
             if(jugador == 1)
-                main.Main.emisor.enviarInformacion(contenido+">1");
+                main.Main.emisor.enviarPeticion(contenido+">t1<0");
             else
-                main.Main.emisor.enviarInformacion(contenido+">2");
-            
+                main.Main.emisor.enviarPeticion(contenido+">t2<0");
         }catch(Exception ex){
             ex.printStackTrace();
         }
