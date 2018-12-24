@@ -5,7 +5,6 @@
  */
 package main;
 
-import java.util.Scanner;
 import rabbit.Emisor;
 import rabbit.Receptor;
 import sistema.ui.VentanaCliente;
