@@ -19,6 +19,9 @@ public class Archivo {
             String contenido = "";
             String linea = reader.readLine();
             while(linea != null){
+                if(linea.contains("\uFEFF")){
+                    linea = linea.replaceAll("\uFEFF", "");
+                }
                 contenido += linea+"\n";
                 linea = reader.readLine();
             }

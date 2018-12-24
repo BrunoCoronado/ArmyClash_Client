@@ -5,6 +5,9 @@
  */
 package sistema.ui.bean;
 
+import java.awt.Graphics;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /**
@@ -15,6 +18,7 @@ public class Casilla extends JPanel {
     private int posX, posY;
     private String tipoCasilla;
     private TropaJL tropa;
+    private Image image;
 
     public TropaJL getTropa() {
         return tropa;
@@ -58,5 +62,44 @@ public class Casilla extends JPanel {
         this.posX = posX;
         this.posY = posY;
         this.tipoCasilla = tipoCasilla;
+        switch(tipoCasilla){
+            case "agua": 
+                try{
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../imagenes/mapa/Agua.png"));
+                    image = icon.getImage();
+                }catch(Exception ex){};
+                break;
+            case "grama": 
+                try{
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../imagenes/mapa/Grama.png"));
+                    image = icon.getImage();
+                }catch(Exception ex){};
+                break;            
+            case "arbol": 
+                try{
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../imagenes/mapa/Arbol.png"));
+                    image = icon.getImage();
+                }catch(Exception ex){};
+                break;
+            case "carretera": 
+                try{
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../imagenes/mapa/Carretera.png"));
+                    image = icon.getImage();
+                }catch(Exception ex){};
+                break;
+            case "montania": 
+                try{
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../imagenes/mapa/Montaña.png"));
+                    image = icon.getImage();
+                }catch(Exception ex){};
+                break;
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics grphcs) {
+        super.paintComponent(grphcs); //To change body of generated methods, choose Tools | Templates.
+        if(image != null)
+        grphcs.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), this);
     }
 }

@@ -17,13 +17,31 @@ public class TropaJL extends JLabel{
     private String nombre;
     private int posicionX;
     private int posicionY;
-    private int vida;
+    private double vida;
+    private int vidaTotal;
     private int ataque;
     private int alcanceMovimiento;
     private int alcanceAtaque;
     private int nivelDesplazamiento;//0->cualquier superficie/1->excepcion agua/2->solo grama,carretera,bosque/3->solo grama,carretera/4->solo carretera
     private int jugador;
     private boolean movido = false;
+    private double bonus;
+
+    public int getVidaTotal() {
+        return vidaTotal;
+    }
+
+    public void setVidaTotal(int vidaTotal) {
+        this.vidaTotal = vidaTotal;
+    }
+    
+    public double getBonus() {
+        return bonus;
+    }
+
+    public void setBonus(String tipoCasilla) {
+        cargarBonus(tipoCasilla);
+    }
 
     public boolean isMovido() {
         return movido;
@@ -67,11 +85,11 @@ public class TropaJL extends JLabel{
         this.posicionY = posicionY;
     }
 
-    public int getVida() {
+    public double getVida() {
         return vida;
     }
 
-    public void setVida(int vida) {
+    public void setVida(double vida) {
         this.vida = vida;
     }
 
@@ -129,12 +147,30 @@ public class TropaJL extends JLabel{
     
     public TropaJL() {}
 
-    public TropaJL(int id, String nombre, int posicionX, int posicionY, int jugador) {
+    public TropaJL(int id, String nombre, int posicionX, int posicionY, int jugador, String tipoCasilla) {
         this.id = id;
-        cargarAtributos(nombre);
         this.posicionX = posicionX;
         this.posicionY = posicionY;
         this.jugador = jugador;
+        cargarBonus(tipoCasilla);
+        cargarAtributos(nombre);
+    }
+    
+    private void cargarBonus(String casilla){
+        switch(casilla){
+            case "agua": bonus = -0.05;
+                break;
+            case "grama": bonus = 0.1;
+                break;
+            case "arbol": bonus = -0.1;
+                break;
+            case "carretera": bonus = 0.0;
+                break;
+            case "montania": bonus = 0.25;
+                break;
+            default: bonus = 0.0;
+                break;
+        }
     }
     
     private void cargarAtributos(String tipo){
@@ -143,30 +179,50 @@ public class TropaJL extends JLabel{
             case "infanteria":
                 alcanceMovimiento = 3;
                 vida = 50;
+                vidaTotal = 50;
                 ataque = 30;
                 alcanceAtaque = 1;
                 nivelDesplazamiento = 0;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/InfanteriaJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/InfanteriaJ2.png")));
                 break;
             case "infanteriam":
                 alcanceMovimiento = 2;
                 vida = 50;
+                vidaTotal = 50;
                 ataque = 50;
                 alcanceAtaque = 3;
                 nivelDesplazamiento = 1;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/InfanteriaMecanizadaJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/InfanteriaMecanizadaJ2.png")));
                 break;
             case "reconocimiento":
                 alcanceMovimiento = 6;
                 vida = 100;
+                vidaTotal = 100;
                 ataque = 50;
                 alcanceAtaque = 2;
                 nivelDesplazamiento = 2;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/ReconocimientoJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/ReconocimientoJ2.png")));
                 break;
             case "tanque":
                 alcanceMovimiento = 4;
                 vida = 150;
+                vidaTotal = 150;
                 ataque = 80;
                 alcanceAtaque = 2;
                 nivelDesplazamiento = 3;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/TanqueJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/TanqueJ2.png")));
                 break;
             case "mtanque":
                 alcanceMovimiento = 3;
@@ -174,15 +230,23 @@ public class TropaJL extends JLabel{
                 ataque = 100;
                 alcanceAtaque = 2;
                 nivelDesplazamiento = 4;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/MegaTanqueJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/MegaTanqueJ2.png")));
                 break;
             case "artilleria":
                 alcanceMovimiento = 3;
                 vida = 50;
+                vidaTotal = 50;
                 ataque = 150;
                 alcanceAtaque = 6;
                 nivelDesplazamiento = 4;
+                if(jugador == 1)
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador1/ArtilleriaJ1.png")));
+                else
+                    this.setIcon(new ImageIcon(getClass().getResource("../imagenes/jugador2/ArtilleriaJ2.png")));
                 break;
         }
-        this.setIcon(new ImageIcon(getClass().getResource("../imagenes/item1.gif")));
     }
 }

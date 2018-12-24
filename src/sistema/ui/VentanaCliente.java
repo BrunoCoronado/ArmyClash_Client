@@ -13,10 +13,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
 import sistema.archivos.Archivo;
-import sistema.bean.Tropa;
 import sistema.ui.bean.Casilla;
 import sistema.ui.bean.TropaJL;
 
@@ -35,6 +36,7 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
     private int contadorTropasJ1 = 0;
     private int contadorMovimientosDisponiblesJ2 = 0;
     private int contadorTropasJ2 = 0;
+    private boolean atacando = false;
     /**
      * Creates new form VentanaCliente
      */
@@ -51,8 +53,8 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
                 txtLog.append("Sobrescribiendo Mapa...\n");
             }
             panel = new JPanel(new GridLayout(filas,columnas,1,1));
-            maxColumnas = (columnas>maxColumnas)?columnas:maxColumnas;
-            maxFilas = (filas>maxFilas)?filas:maxFilas;
+            maxColumnas = columnas;
+            maxFilas = filas;
             cargarPaneles(contenido.split("\n"));
             for (int i = 0; i < maxFilas; i++) {
                 for (int j = 0; j < maxColumnas; j++) {
@@ -102,8 +104,6 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
             case "arbol": return Color.yellow;
             case "carretera": return Color.GRAY;
             case "montania": return Color.orange;
-            case "j1": return Color.RED;
-            case "j2": return Color.CYAN;
         }
         return Color.WHITE;
     }
@@ -112,30 +112,42 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         try{
             String[] valoresContenido = contenido.split("#");
             String[] tropasJugador1 = valoresContenido[0].split("\n");
-            contadorTropasJ1 = tropasJugador1.length;
-            contadorMovimientosDisponiblesJ1 = contadorTropasJ1;
             String[] tropasJugador2 = valoresContenido[1].split("\n");
-            contadorTropasJ2 = tropasJugador2.length;
-            contadorMovimientosDisponiblesJ2 = contadorTropasJ2;
-                
             for (int i = 0; i < tropasJugador1.length; i++) {
                 String[] valoresTropa = tropasJugador1[i].split(",");//0-Id/1-Tipo/2-X/3-Y
                 int fila = Integer.parseInt(valoresTropa[3]);
                 int columna = Integer.parseInt(valoresTropa[2]);
-                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila, 1);
+                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila, 1, tablero[fila-1][columna-1].getTipoCasilla());
                 tropaJL.addMouseListener(this);
-                try{tablero[fila-1][columna-1].setTropa(tropaJL);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
-            }
+                if(validarNivelDesplazamientoTropa(tropaJL.getNivelDesplazamiento(), tablero[fila-1][columna-1])){
+                    try{
+                        tablero[fila-1][columna-1].setTropa(tropaJL);
+                        contadorTropasJ1++;
+                    }catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
+                }else
+                    txtLog.append("---->!!!Error al cargar Tropas - Omitida - Generada En Terreno Invalido!!!\n");
+            }       
             for (int i = 0; i < tropasJugador2.length; i++) {
                 String[] valoresTropa = tropasJugador2[i].split(",");//0-Id/1-Tipo/2-X/3-Y
                 int fila = Integer.parseInt(valoresTropa[3]);
                 int columna = Integer.parseInt(valoresTropa[2]);
-                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila,2);
+                TropaJL tropaJL = new TropaJL(Integer.parseInt(valoresTropa[0]),valoresTropa[1], columna, fila,2, tablero[fila-1][columna-1].getTipoCasilla());
                 tropaJL.addMouseListener(this);
-                try{tablero[fila-1][columna-1].setTropa(tropaJL);}catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
+                if(validarNivelDesplazamientoTropa(tropaJL.getNivelDesplazamiento(), tablero[fila-1][columna-1])){
+                    try{
+                        tablero[fila-1][columna-1].setTropa(tropaJL);
+                        contadorTropasJ2++;
+                    }catch(Exception ex){txtLog.append("---->!!!Error al cargar Tropas - Fuera de Mapa!!!\n");}
+                }else
+                    txtLog.append("---->!!!Error al cargar Tropas - Omitida - Generada En Terreno Invalido!!!\n");
             }
+            txtLog.append("--> Tropas Cargadas\n");
+            contadorMovimientosDisponiblesJ1 = contadorTropasJ1;
+            contadorMovimientosDisponiblesJ2 = contadorTropasJ2;
+            btnFinalizarTurno.setEnabled(true);
             pack();
         }catch(Exception ex){
+            ex.printStackTrace();
             txtLog.append("---->!!!Error al cargar tropas!!!\n");
         }
     }
@@ -146,6 +158,7 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         panelAdministrativo.add(btnCargarArchivo);
         panelAdministrativo.add(btnCargarTropas);
         panelAdministrativo.add(btnCargarMapa);
+        panelAdministrativo.add(btnFinalizarTurno);
         add(panelAdministrativo, BorderLayout.PAGE_START);
         DefaultCaret caret = (DefaultCaret) txtLog.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -161,6 +174,22 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         CboxCargaArchivos.addItem("Tropas Jugador 2");
         FileNameExtensionFilter filtro = new FileNameExtensionFilter(".army", "army");
         fileChooser.setFileFilter(filtro);
+        //manejamos el comportamiento del JPopupMenu con un listener para el componenete
+        menuJugador.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent pme) {}
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent pme) {}
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent pme) {
+                if(!atacando){
+                    flujoDeTurnos(jugadorActual);
+                    tropaMovimientoActual = null;
+                }
+            }
+        });
     }
     
     private void flujoDeTurnos(int jugador){
@@ -168,20 +197,20 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
             switch(jugador){
                 case 1:
                     contadorMovimientosDisponiblesJ1--;
-                    txtLog.setText(txtLog.getText() + "--> Movimientos Restantes: "+contadorMovimientosDisponiblesJ1+" Jugador"+jugador+"\n");
+                    txtLog.append("--> Movimientos Restantes: "+contadorMovimientosDisponiblesJ1+" Jugador"+jugador+"\n");
                     if(contadorMovimientosDisponiblesJ1 == 0){
                         jugadorActual = 2;
-                        txtLog.setText(txtLog.getText() + "--> Turno del Jugador"+jugadorActual+"\n");
+                        txtLog.append("--> Turno del Jugador"+jugadorActual+"\n");
                         contadorMovimientosDisponiblesJ1 = contadorTropasJ1;
                         reiniciarTropasJugador(1);
                     }
                     break;
                 case 2:
                     contadorMovimientosDisponiblesJ2--;
-                    txtLog.setText(txtLog.getText() + "--> Movimientos Restantes: "+contadorMovimientosDisponiblesJ2+" Jugador"+jugador+"\n");
+                    txtLog.append("--> Movimientos Restantes: "+contadorMovimientosDisponiblesJ2+" Jugador"+jugador+"\n");
                     if(contadorMovimientosDisponiblesJ2 == 0){
                         jugadorActual = 1;
-                        txtLog.setText(txtLog.getText() + "--> Turno del Jugador"+jugadorActual+"\n");
+                        txtLog.append("--> Turno del Jugador"+jugadorActual+"\n");
                         contadorMovimientosDisponiblesJ2 = contadorTropasJ2;
                         reiniciarTropasJugador(2);
                     }
@@ -193,7 +222,7 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
     private void reiniciarTropasJugador(int jugador){
         for (int i = 0; i < maxFilas; i++) {
             for (int j = 0; j < maxColumnas; j++) {
-                if(tablero[i][j].getTropa().getNombre() != null){
+                if(tablero[i][j].getTropa() != null){
                     if(tablero[i][j].getTropa().getJugador() == jugador)
                        tablero[i][j].getTropa().setMovido(false);
                 }
@@ -201,48 +230,29 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         }
     }
     
-    private void enviarCambiosTropa(int id, int posicionX, int posicionY, int vida, int jugador){
-        main.Main.emisor.enviarPeticion(id+","+posicionX+","+posicionY+","+vida+">ac"+jugador+"<0");
+    private void enviarCambiosTropa(int id, int posicionX, int posicionY, double vida, int jugador, String identificadorMensaje){
+        main.Main.emisor.enviarPeticion(id+","+posicionX+","+posicionY+","+vida+">"+identificadorMensaje+""+jugador+"<0");
         txtLog.setText(txtLog.getText() + "--> Enviando informacion al servidor...\n");
     }
     
     private boolean validarMovimiento(TropaJL tropa, Casilla casilla){
+        //validar que no este en ataque
+        if(atacando){
+            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Ataque En Curso Finalizado!!!\n");                      
+            atacando = false;
+            flujoDeTurnos(jugadorActual);
+            tropaMovimientoActual = null;
+            return false;
+        }
         //validar que este disponible
-        if(casilla.getTropa().getNombre() != null){
+        if(casilla.getTropa() != null){
             main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Casilla Ocupada!!!\n");                      
             return false;
         }
         //validar el terreno
-        int nivelDesplazamiento = tropa.getNivelDesplazamiento();
-        if(nivelDesplazamiento != 0){
-            switch(nivelDesplazamiento){
-                case 1:
-                    if(casilla.getTipoCasilla().equals("agua")){
-                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
-                        return false;
-                    }
-                    break;
-                case 2:
-                    if(casilla.getTipoCasilla().equals("montania") || casilla.getTipoCasilla().equals("agua")){
-                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
-                        return false;
-                    }
-                    break;
-                case 3:
-                    if(!casilla.getTipoCasilla().equals("grama")){
-                        if(!casilla.getTipoCasilla().equals("carretera")){
-                            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
-                            return false;
-                        }
-                    }
-                    break;
-                case 4:
-                    if(!casilla.getTipoCasilla().equals("carretera")){
-                        main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
-                        return false;
-                    }
-                    break;
-            }
+        if(!validarNivelDesplazamientoTropa(tropa.getNivelDesplazamiento(), casilla)){
+            main.Main.ventanaCliente.txtLog.append("--> Movimiento Invalido - Terreno Invalido!!!\n");
+            return false;
         }
         //validar limite movimiento
         int casillasMovidas = Math.abs(tropa.getPosicionX()-casilla.getPosX())+Math.abs(tropa.getPosicionY()-casilla.getPosY());
@@ -251,6 +261,114 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
             return false;
         }
         return true;
+    }
+    
+    private boolean validarNivelDesplazamientoTropa(int nivelDesplazamiento, Casilla casilla){
+        if(!casilla.getTipoCasilla().equals("")){
+            if(nivelDesplazamiento != 0){
+                switch(nivelDesplazamiento){
+                    case 1:
+                        if(casilla.getTipoCasilla().equals("agua")){
+                            return false;
+                        }
+                        break;
+                    case 2:
+                        if(casilla.getTipoCasilla().equals("montania") || casilla.getTipoCasilla().equals("agua")){
+                            return false;
+                        }
+                        break;
+                    case 3:
+                        if(!casilla.getTipoCasilla().equals("grama")){
+                            if(!casilla.getTipoCasilla().equals("carretera")){
+                                return false;
+                            }
+                        }
+                        break;
+                    case 4:
+                        if(!casilla.getTipoCasilla().equals("carretera")){
+                            return false;
+                        }
+                        break;
+                    default:
+                        return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private void moverTropa(Casilla casilla){
+        main.Main.ventanaCliente.txtLog.append("--> Moviendo a Columa "+casilla.getPosX()+" Fila "+casilla.getPosY()+" del tipo "+casilla.getTipoCasilla()+"\n");   
+        enviarCambiosTropa(tropaMovimientoActual.getId(), casilla.getPosX(), casilla.getPosY(), tropaMovimientoActual.getVida(), jugadorActual, "ac");
+        tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].removeTropa();
+        tropaMovimientoActual.setPosicionX(casilla.getPosX());
+        tropaMovimientoActual.setPosicionY(casilla.getPosY());
+        tropaMovimientoActual.setBonus(tablero[casilla.getPosY()-1][casilla.getPosX()-1].getTipoCasilla());
+        tablero[casilla.getPosY()-1][casilla.getPosX()-1].setTropa(tropaMovimientoActual);
+        repaint();
+    }
+    
+    private void atacarTropa(TropaJL atacante, TropaJL atacado){
+        if(atacante.getJugador() != atacado.getJugador()){
+            int distanciaAtaque = Math.abs(atacante.getPosicionX()-atacado.getPosicionX())+Math.abs(atacante.getPosicionY()-atacado.getPosicionY());
+            if(distanciaAtaque <= atacante.getAlcanceAtaque()){
+                main.Main.ventanaCliente.txtLog.append("--> Atacando Con "+atacante.getNombre()+" ID "+atacante.getId()+" con Vida "+atacante.getVida()+" de jugador "+atacante.getJugador()+" a "+atacado.getNombre()+" ID "+atacado.getId()+" con vida "+atacado.getVida()+" de jugador "+atacado.getJugador()+"\n");
+                atacado.setVida(atacado.getVida() - calcularAtaque(atacante.getAtaque(), atacante.getVida(), atacante.getVidaTotal(), atacante.getBonus()));
+                if(atacado.getVida() > 0){
+                    main.Main.ventanaCliente.txtLog.append("--> Resultado: "+atacado.getNombre()+" ID "+atacado.getId()+" vida "+atacado.getVida()+" de jugador "+atacado.getJugador()+"!!!\n");
+                    tablero[atacado.getPosicionY()-1][atacado.getPosicionX()-1].getTropa().setVida(atacado.getVida());
+                    enviarCambiosTropa(atacado.getId(), atacado.getPosicionX(), atacado.getPosicionY(), atacado.getVida(), atacado.getJugador(), "atq");
+                    if(distanciaAtaque <= atacado.getAlcanceAtaque()){
+                        main.Main.ventanaCliente.txtLog.append("--> Contraatque de "+atacado.getNombre()+" ID "+atacado.getId()+" con Vida "+atacado.getVida()+" de jugador "+atacado.getJugador()+" a "+atacante.getNombre()+" ID "+atacante.getId()+" con vida "+atacante.getVida()+" de "+atacante.getNombre()+"\n");
+                        atacante.setVida(atacante.getVida() - calcularAtaque(atacado.getAtaque(), atacado.getVida(), atacado.getVidaTotal(), atacado.getBonus()));
+
+                        if(atacante.getVida() > 0){
+                            main.Main.ventanaCliente.txtLog.append("--> Resultado: "+atacante.getNombre()+" ID "+atacante.getId()+" vida "+atacante.getVida()+" de jugador "+atacante.getJugador()+"!!!\n");
+                            tablero[atacante.getPosicionY()-1][atacante.getPosicionX()-1].getTropa().setVida(atacante.getVida());   
+                            enviarCambiosTropa(atacante.getId(), atacante.getPosicionX(), atacante.getPosicionY(), atacante.getVida(), atacante.getJugador(), "atq");
+                        }else{
+                            main.Main.ventanaCliente.txtLog.append("--> Resultado: "+atacante.getNombre()+" ID "+atacante.getId()+" de "+atacante.getJugador()+" MUERTO!!!\n");
+                            tablero[atacante.getPosicionY()-1][atacante.getPosicionX()-1].removeTropa();
+                            repaint();
+                            informarMuerte(atacante.getId(), atacante.getJugador(), "mrt");
+                            main.Main.ventanaCliente.txtLog.append("--> atacante muerto!!!\n");
+                        }
+                    }
+                }else{
+                    main.Main.ventanaCliente.txtLog.append("--> Resultado: "+atacado.getNombre()+" ID "+atacado.getId()+" de "+atacado.getJugador()+" MUERTO!!!\n");
+                    tablero[atacado.getPosicionY()-1][atacado.getPosicionX()-1].removeTropa();
+                    repaint();
+                    informarMuerte(atacado.getId(), atacado.getJugador(), "mrt");
+                }
+            }else{
+                main.Main.ventanaCliente.txtLog.append("--> Ataque Fuera de alcance!!!\n");
+            }
+            
+        }else
+            main.Main.ventanaCliente.txtLog.append("--> Imposible Atacar Tropas Aliadas!!!\n");
+    }
+    
+    private void informarMuerte(int id, int jugador, String identificadorMensaje){
+        if(jugador == 1){
+            contadorTropasJ1--;
+            contadorMovimientosDisponiblesJ1--;
+        }else{
+            contadorTropasJ2--;
+            contadorMovimientosDisponiblesJ2--;
+        }
+        main.Main.emisor.enviarPeticion(id+">"+identificadorMensaje+""+jugador+"<0");
+        txtLog.setText(txtLog.getText() + "--> Enviando informacion al servidor...\n");
+    }
+    
+    private double calcularAtaque(int daño, double vidaAtacante, int vidaTotalAtacante, double bonus){
+        double dañoInfligido = 0;
+        double dañoBonus = 0;
+        txtLog.setText(txtLog.getText() + "---> Calculando Daño infligido con > daño tropa: "+daño+" vida tropa: "+vidaAtacante+" vida total: "+vidaTotalAtacante+" bonus: "+bonus+"\n");
+        dañoInfligido =((daño)*(vidaAtacante/vidaTotalAtacante));
+        dañoBonus = ((daño)*(vidaAtacante/vidaTotalAtacante)*bonus);
+        txtLog.setText(txtLog.getText() + "---> Daño infligido: "+dañoInfligido+" Daño bonus: "+dañoBonus+" Daño infligido total: "+(dañoInfligido+dañoBonus)+"\n");
+        return dañoInfligido+dañoBonus;
     }
     
     /**
@@ -268,6 +386,10 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         btnCargarMapa = new javax.swing.JButton();
         btnCargarTropas = new javax.swing.JButton();
         txtLog = new javax.swing.JTextArea();
+        menuJugador = new javax.swing.JPopupMenu();
+        Atacar = new javax.swing.JMenuItem();
+        Finalizar = new javax.swing.JMenuItem();
+        btnFinalizarTurno = new javax.swing.JButton();
 
         fileChooser.setAutoscrolls(true);
 
@@ -298,6 +420,30 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         txtLog.setColumns(20);
         txtLog.setFont(new java.awt.Font("Consolas", 0, 14)); // NOI18N
         txtLog.setRows(5);
+
+        Atacar.setText("Atacar");
+        Atacar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                AtacarActionPerformed(evt);
+            }
+        });
+        menuJugador.add(Atacar);
+
+        Finalizar.setText("Finalizar");
+        Finalizar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                FinalizarActionPerformed(evt);
+            }
+        });
+        menuJugador.add(Finalizar);
+
+        btnFinalizarTurno.setText("Finalizar Turno");
+        btnFinalizarTurno.setEnabled(false);
+        btnFinalizarTurno.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnFinalizarTurnoActionPerformed(evt);
+            }
+        });
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -333,33 +479,69 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
         txtLog.setText(txtLog.getText() + "--> Solicitando tropas al servidor...\n");
     }//GEN-LAST:event_btnCargarTropasActionPerformed
 
+    private void FinalizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FinalizarActionPerformed
+        flujoDeTurnos(jugadorActual);
+        tropaMovimientoActual = null;
+    }//GEN-LAST:event_FinalizarActionPerformed
+
+    private void AtacarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AtacarActionPerformed
+        atacando = true;
+        txtLog.setText(txtLog.getText() + "--> Atacando con "+tropaMovimientoActual.getNombre()+" de jugador "+tropaMovimientoActual.getJugador()+"\n");
+    }//GEN-LAST:event_AtacarActionPerformed
+
+    private void btnFinalizarTurnoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFinalizarTurnoActionPerformed
+        tropaMovimientoActual = null;
+        atacando = false;
+        switch(jugadorActual){
+            case 1:
+                contadorMovimientosDisponiblesJ1 = 0;
+                txtLog.setText("--> Turno Jugador 1 Finalizado\n");
+                if(contadorMovimientosDisponiblesJ1 == 0){
+                    jugadorActual = 2;
+                    txtLog.setText(txtLog.getText() + "--> Turno del Jugador"+jugadorActual+"\n");
+                    contadorMovimientosDisponiblesJ1 = contadorTropasJ1;
+                    reiniciarTropasJugador(1);
+                }
+                break;
+            case 2:
+                contadorMovimientosDisponiblesJ2 = 0;
+                txtLog.setText("--> Turno Jugador 2 Finalizado\n");
+                if(contadorMovimientosDisponiblesJ2 == 0){
+                    jugadorActual = 1;
+                    txtLog.setText(txtLog.getText() + "--> Turno del Jugador"+jugadorActual+"\n");
+                    contadorMovimientosDisponiblesJ2 = contadorTropasJ2;
+                    reiniciarTropasJugador(2);
+                }
+                break;
+        }
+    }//GEN-LAST:event_btnFinalizarTurnoActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem Atacar;
     private javax.swing.JComboBox<String> CboxCargaArchivos;
+    private javax.swing.JMenuItem Finalizar;
     private javax.swing.JButton btnCargarArchivo;
     private javax.swing.JButton btnCargarMapa;
     private javax.swing.JButton btnCargarTropas;
+    private javax.swing.JButton btnFinalizarTurno;
     private javax.swing.JFileChooser fileChooser;
+    private javax.swing.JPopupMenu menuJugador;
     public static javax.swing.JTextArea txtLog;
     // End of variables declaration//GEN-END:variables
     
+    /**
+     *
+     * @param me
+     */
     @Override
     public void mouseClicked(MouseEvent me) {
         if(me.getComponent() instanceof Casilla){
             if(tropaMovimientoActual != null){
-                Casilla casilla = (Casilla)me.getComponent();
-                if(validarMovimiento(tropaMovimientoActual, casilla)){
-                    main.Main.ventanaCliente.txtLog.append("--> Moviendo a Columa "+casilla.getPosX()+" Fila "+casilla.getPosY()+" del tipo "+casilla.getTipoCasilla()+"\n");   
-                    enviarCambiosTropa(tropaMovimientoActual.getId(), casilla.getPosX(), casilla.getPosY(), tropaMovimientoActual.getVida(), jugadorActual);
-                    TropaJL tropaJL = new TropaJL();  
-                    tropaJL.addMouseListener(this);
-                    tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].removeTropa();
-                    tablero[tropaMovimientoActual.getPosicionY()-1][tropaMovimientoActual.getPosicionX()-1].setTropa(tropaJL);
-                    tropaMovimientoActual.setPosicionX(casilla.getPosX());
-                    tropaMovimientoActual.setPosicionY(casilla.getPosY());
-                    tablero[casilla.getPosY()-1][casilla.getPosX()-1].setTropa(tropaMovimientoActual);
-                    flujoDeTurnos(jugadorActual);
-                    tropaMovimientoActual = null;
-                    repaint();
+                if(validarMovimiento(tropaMovimientoActual, (Casilla)me.getComponent())){
+                    moverTropa((Casilla)me.getComponent());
+                    if(!me.isPopupTrigger()){
+                        menuJugador.show(me.getComponent(), me.getX(), me.getY());
+                    }
                 }
             }
         }else{
@@ -369,27 +551,50 @@ public class VentanaCliente extends javax.swing.JFrame implements MouseListener{
                     if(!tropa.isMovido()){
                         tropa.setMovido(true);
                         tropaMovimientoActual = tropa;
-                        main.Main.ventanaCliente.txtLog.append("--> Moviendo "+tropa.getNombre()+" ID "+tropa.getId()+ " Columa "+tropa.getPosicionX()+" Fila "+tropa.getPosicionY()+" Jugador "+tropa.getJugador()+"\n");
+                        VentanaCliente.txtLog.append("--> Moviendo "+tropa.getNombre()+" ID "+tropa.getId()+ " Columa "+tropa.getPosicionX()+" Fila "+tropa.getPosicionY()+" Jugador "+tropa.getJugador()+"\n");
                     }else
-                        main.Main.ventanaCliente.txtLog.append("*** Tropa "+tropa.getNombre()+" sin movimientos disponibles!!! \n");
+                        VentanaCliente.txtLog.append("*** Tropa "+tropa.getNombre()+" sin movimientos disponibles!!! \n");
                 }else
-                    main.Main.ventanaCliente.txtLog.append("*** Tropa de jugador Contrario!!!\n");
+                    VentanaCliente.txtLog.append("*** Tropa de jugador Contrario!!!\n");
             }else{
-                main.Main.ventanaCliente.txtLog.append("*** Terminar moviento con "+tropaMovimientoActual.getNombre()+"!!! \n");
+                if(!atacando)
+                    VentanaCliente.txtLog.append("*** Terminar movimiento con "+tropaMovimientoActual.getNombre()+"!!! \n");
+                else{
+                    //seleccione una tropa para el ataque
+                    atacarTropa(tropaMovimientoActual, (TropaJL)me.getComponent());
+                    atacando = false;
+                    flujoDeTurnos(jugadorActual);
+                    tropaMovimientoActual = null;
+                }
             }
         }
-        
     }
 
+    /**
+     *
+     * @param me
+     */
     @Override
     public void mousePressed(MouseEvent me) {}
 
+    /**
+     *
+     * @param me
+     */
     @Override
     public void mouseReleased(MouseEvent me) {}
 
+    /**
+     *
+     * @param me
+     */
     @Override
     public void mouseEntered(MouseEvent me) {}
-
+    
+    /**
+     *
+     * @param me
+     */
     @Override
     public void mouseExited(MouseEvent me) {}
 }
